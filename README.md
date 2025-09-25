@@ -9,7 +9,7 @@ This repository contains a prototype for a multi-agent system designed for perso
 
 *(Optional but highly recommended: Record a short GIF of you interacting with the app and embed it here. It's a great way to make an immediate impression.)*
 
-![Demo GIF](link_to_your_gif_or_screenshot.gif)
+![Demo GIF](tax_agent.gif)
 
 ---
 
