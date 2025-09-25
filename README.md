@@ -27,34 +27,7 @@ This prototype successfully demonstrates the core capabilities outlined in the c
 ## 🏛️ System Architecture
 
 The system is built using a stateful graph architecture orchestrated by **LangGraph**. This allows for complex, cyclical conversational flows where agents can hand off tasks to one another.
-
-  
-
-+---------------------------+ +-------------------------+
-| Streamlit UI |<----->| LangGraph Orchestrator |
-+---------------------------+ +----|--------------------+
-|
-+-------------------------------+-------------------------------+
-| | |
-+--------v--------+ +--------v---------+ +-------v---------+
-| Router Agent |------------>| Profile Manager |------------>| Knowledge Agent |
-| (Routes intent) | | (Updates Profile)| | (Answers Qs) |
-+-----------------+ +------------------+ +--------|--------+
-|
-+--------v----------+
-| Action Proposer |
-| (Suggests next) |
-+-------------------+
-|
-External Components |
-+-----------------------------+ <---------+
-| Knowledge Base (Vector DB) |
-+-----------------------------+
-+-----------------------------+
-| Long-Term Memory |
-| (User Profile) |
-+-----------------------------+
-code Code
+![Tax Agent](tax_agent.png)
 
     
 ### Component Roles
