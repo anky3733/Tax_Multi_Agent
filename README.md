@@ -25,6 +25,7 @@ This prototype successfully demonstrates the core capabilities outlined in the c
 ---
 
 
+    
 ## 💬 Conversation Demonstration
 
 The following is a complete, unedited conversation with the prototype, showcasing all the key features in a single, continuous flow.
@@ -83,7 +84,8 @@ code JSON
     
 {
   "occupation": "freelancer",
-  ...
+  "marital_status": null,
+  "has_dependents": false,
   "known_expenses": [
     "Office chair purchase",
     "Train ticket"
@@ -106,6 +108,7 @@ Work Equipment (Arbeitsmittel)
 🤖 AI: (Demonstrating honesty about knowledge gaps)
 The provided documents state that items like the 250 € office chair can be claimed as a business expense. However, if you need the precise legal threshold for low-value assets, you would have to consult the current tax code, as that detail is not covered in the supplied context.
 </details>
+```
 
 ## 🏛️ System Architecture
 
