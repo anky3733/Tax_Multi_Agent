@@ -1,4 +1,4 @@
-from typing import TypedDict, List, Annotated
+from typing import TypedDict, List, Annotated, Optional, Dict
 from langchain_core.messages import BaseMessage
 import operator
 
@@ -12,12 +12,12 @@ class UserProfile(TypedDict):
 class GraphState(TypedDict):
     """
     Represents the entire state of our graph.
-
-    Attributes:
-        messages: The conversation history.
-        user_profile: The user's persistent profile.
-        next_node: The next agent to call.
     """
     messages: Annotated[List[BaseMessage], operator.add]
     user_profile: UserProfile
     next_node: str
+    # --- NEW FIELD ---
+    # final_response: Optional[str] = None
+
+    direct_response: Optional[str] = None
+    proposed_action: Optional[Dict] = None

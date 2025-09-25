@@ -3,15 +3,15 @@ import streamlit as st
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import DirectoryLoader, TextLoader
 from langchain_community.vectorstores import Chroma
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
+# --- CHANGE 1: Import the new embeddings class ---
+from langchain_community.embeddings import SentenceTransformerEmbeddings
 
-# Use a Streamlit cache resource to prevent re-initializing the vector store on every interaction
 @st.cache_resource
 def build_retriever():
     """
     Builds a vector store retriever from documents in the './data' directory.
     """
-    print("--- Building Retriever ---")
+    print("--- Building Retriever with Local Embeddings ---")
     # 1. Load Documents
     loader = DirectoryLoader(
         './data',
@@ -25,9 +25,12 @@ def build_retriever():
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
     splits = text_splitter.split_documents(docs)
 
-    # 3. Create Embeddings and Vector Store
-    # We will use the free Google Generative AI embeddings
-    embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+    # --- CHANGE 2: Use the local SentenceTransformerEmbeddings ---
+    # This model runs on your machine. No API key needed.
+    # The first time this runs, it will download the model (~227MB). This is a one-time event.
+    print("--- Initializing local embedding model ---")
+    embeddings = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
+    print("--- Embedding model loaded ---")
     
     vectorstore = Chroma.from_documents(documents=splits, embedding=embeddings)
 
