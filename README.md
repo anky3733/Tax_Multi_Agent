@@ -24,6 +24,89 @@ This prototype successfully demonstrates the core capabilities outlined in the c
 
 ---
 
+
+## 💬 Conversation Demonstration
+
+The following is a complete, unedited conversation with the prototype, showcasing all the key features in a single, continuous flow.
+
+<details>
+<summary><strong>Click to expand the full conversation log</strong></summary>
+
+**👤 User Profile (Initial State):**
+```json
+{
+  "occupation": null,
+  "marital_status": null,
+  "has_dependents": false,
+  "known_expenses": []
+}
+
+  
+
+🤖 AI: Hello! How can I help you with your taxes today?
+
+🙂 Human: What is the Home-Office-Pauschale?
+
+🤖 AI:
+Home Office Lump Sum (Home-Office-Pauschale)
+
+    Eligibility: Available to anyone who works from home, including freelancers (Freiberufler), and does not have another dedicated workspace provided by their employer.
+
+    Calculation: A lump sum of 6 € per day worked from home.
+
+    Annual Limit: Capped at a maximum of 210 home-office days per year, resulting in a maximum annual deduction of 1,260 €.
+
+🙂 Human: I'm a Freiberufler in Germany. How do I file my taxes?
+
+🤖 AI:
+Filing Taxes as a Freiberufler (Self-Employed)
+
+    Register with the Finanzamt: Obtain a Steuernummer (business tax number) from your local tax office.
+
+    Use the ELSTER portal: ELSTER is the mandatory online platform for all tax filings.
+
+    Quarterly estimated tax payments: As a freelancer you must pay income tax in advance.
+
+    Annual income-tax return: File the Einkommensteuererklärung via ELSTER, including revenue and business expenses.
+
+(The AI now displays an interactive prompt because it has learned the user is a freelancer with no logged expenses)
+
+🤖 AI: Of course. What are the expenses you would like to add? Please list them (e.g., 'Office supplies 50 €, business travel 300 €').
+
+🙂 Human: I bought a new office chair for 250 euros and a train ticket for a client meeting for 85 euros.
+
+🤖 AI: Got it. I've updated your profile with: occupation, known_expenses.
+
+👤 User Profile (Updated State):
+code JSON
+
+    
+{
+  "occupation": "freelancer",
+  ...
+  "known_expenses": [
+    "Office chair purchase",
+    "Train ticket"
+  ]
+}
+
+  
+
+🙂 Human: What about work equipment (arbeitsmittel)?
+
+🤖 AI:
+Work Equipment (Arbeitsmittel)
+
+    Definition: Work equipment is any item necessary for your freelance activity.
+
+    Deduction: Such items can be claimed as business expenses. Keep the invoice (e.g., for the 250 € office chair).
+
+🙂 Human: Is there a cost limit for immediate deduction?
+
+🤖 AI: (Demonstrating honesty about knowledge gaps)
+The provided documents state that items like the 250 € office chair can be claimed as a business expense. However, if you need the precise legal threshold for low-value assets, you would have to consult the current tax code, as that detail is not covered in the supplied context.
+</details>
+
 ## 🏛️ System Architecture
 
 The system is built using a stateful graph architecture orchestrated by **LangGraph**. This allows for complex, cyclical conversational flows where agents can hand off tasks to one another.
