@@ -27,6 +27,8 @@ This prototype successfully demonstrates the core capabilities outlined in the c
 ## 🏛️ System Architecture
 
 The system is built using a stateful graph architecture orchestrated by **LangGraph**. This allows for complex, cyclical conversational flows where agents can hand off tasks to one another.
+
+
 ![Tax Agent](tax_agent.png)
 
     
