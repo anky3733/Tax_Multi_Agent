@@ -1,31 +1,24 @@
-# Common Tax Deductions Guide
+# Common Tax Deductions in Germany (Werbungskosten)
 
-## Home Office Deduction
-- **Eligibility:** You must use a part of your home exclusively and regularly for your trade or business.
-- **Calculation (Simplified Method):** $5 per square foot of home office space, up to a maximum of 300 square feet ($1,500).
-- **Examples:** A dedicated spare room used as an office, a studio in your garage. A desk in the corner of your living room does not qualify if that area is also used for personal activities.
+## Home Office Lump Sum (Home-Office-Pauschale)
+- **Eligibility:** Available to anyone who works from home and does not have another dedicated workspace provided by their employer. This is common for freelancers.
+- **Calculation:** As of 2023, the deduction is a lump sum of **6 € per day** worked from home.
+- **Annual Limit:** The deduction is capped at a maximum of **210 home-office days** per year, resulting in a maximum annual deduction of **1,260 €**.
+- **Important:** This is a *Pauschale* (lump sum). You do not need to prove individual costs. You only need to track the days you worked from home.
 
-## Vehicle Expense Deduction
-- **Eligibility:** Applicable for self-employed individuals who use their personal vehicle for business purposes.
+## Vehicle Expenses (Fahrtkosten)
+- **Eligibility:** Applicable for self-employed individuals (*Freiberufler*) who use their vehicle for business-related travel (e.g., visiting clients).
 - **Methods:**
-  1. **Standard Mileage Rate:** A set rate per mile driven for business. For 2023, it was 65.5 cents per mile. You must keep a log of business miles.
-  2. **Actual Expense Method:** Track all car-related expenses (gas, insurance, repairs, depreciation) and deduct the portion attributable to business use.
-- **Commuting:** Driving from home to your primary place of business is considered commuting and is not deductible.
+  1. **Commuter Allowance (Pendlerpauschale):** Primarily for commuters to a primary workplace, but the concept of per-kilometer deduction is key.
+  2. **Actual Expense Method:** Track all car-related expenses (fuel, insurance, repairs, depreciation) and deduct the portion attributable to business use. A detailed logbook (*Fahrtenbuch*) is usually required.
 
-## Charitable Contributions
-- **Eligibility:** Must be made to a qualified charitable organization.
-- **Deduction Limit:** For cash contributions, you can generally deduct up to 60% of your adjusted gross income (AGI).
-- **Record Keeping:** You need a bank record or a written receipt from the charity for any cash contribution. For donations over $250, you must have a written acknowledgment from the organization.
+## Work Equipment (Arbeitsmittel)
+- **Definition:** You can deduct the cost of equipment that is used almost exclusively (over 90%) for your professional work.
+- **Common Examples:**
+  - A new laptop or computer.
+  - Software subscriptions (e.g., Adobe Creative Cloud, Microsoft 365).
+  - A desk, office chair, or bookshelves.
+- **Depreciation (Abschreibung):** For items costing more than **800 €** (net), you typically have to depreciate the cost over several years. However, for computer hardware and software, a special rule allows for full depreciation in the first year.
 
-# Tax Rules for Dependents and Spouses
-
-## Filing Status
-- **Married Filing Jointly:** If you are married, you can typically file a joint tax return with your spouse. This often results in a lower tax bill than filing separately.
-- **Head of Household:** If you are unmarried and pay more than half the costs of keeping up a home for a qualifying person (like a child), you may be able to file as Head of Household, which has a higher standard deduction than filing as Single.
-
-## Dependent Tax Credits
-- **Child Tax Credit:** You may be eligible to claim the Child Tax Credit for each qualifying child under the age of 17.
-- **Credit for Other Dependents:** For dependents who do not qualify for the Child Tax Credit (such as a qualifying relative or an older child), you may be able to claim the Credit for Other Dependents. A spouse can never be claimed as a dependent.
-
-## Spousal Expenses
-- Simply covering the living expenses of a non-working spouse is not directly tax-deductible. However, being married and filing jointly is the primary way this financial situation is recognized by the tax system, typically through a higher standard deduction and different tax brackets.
+## Health Insurance Premiums (Krankenversicherungsbeiträge)
+- **Deductibility:** Contributions to statutory or private basic health and long-term care insurance are fully deductible as "special expenses" (*Sonderausgaben*).

@@ -8,7 +8,6 @@ from typing import Literal
 from graph_state import GraphState
 from tools.profile_tools import ProfileUpdates
 
-# --- NEW: A Pydantic model for the internal routing decision ---
 class NextAction(BaseModel):
     """Determines the next agent to call after updating the profile."""
     next_node: Literal["knowledge_agent", "end_conversation"] = Field(
@@ -21,20 +20,21 @@ async def run_profile_manager(state: GraphState):
     """
     print("--- Running Profile Manager ---")
     
-    # --- Part 1: Extract Profile Information (existing logic) ---
-    extraction_llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0)
+    # --- Part 1: Extract Profile Information ---
+    extraction_llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0) # Or another capable model
     structured_extraction_llm = extraction_llm.with_structured_output(ProfileUpdates)
     
-    extraction_prompt_text = """You are an expert at extracting user profile information from a conversation.
-    Given the conversation history and the user's last message, extract any relevant details about their profile.
-    Only extract information that is explicitly mentioned.
+    # --- UPDATED GERMAN-CONTEXT EXTRACTION PROMPT ---
+    extraction_prompt_text = """You are an expert at extracting user profile information for a German tax context.
+Given the conversation history and the user's last message, extract any relevant details about their profile.
+Focus on key German tax concepts like being a 'Freiberufler' (freelancer).
 
-    --- DATA TYPE & INFERENCE RULES (VERY IMPORTANT) ---
-    1.  `has_dependents`: This field MUST be a native JSON boolean (`true` or `false`), NOT a string. If the user mentions a 'wife', 'spouse', 'son', 'daughter', or 'child', you MUST set `has_dependents` to `true`.
-    2.  `marital_status`: This field MUST be a string (e.g., "married", "single"). If the user mentions a 'wife', 'spouse', or 'husband', you MUST set `marital_status` to "married". DO NOT use a boolean for this field.
-    3.  `known_expenses`: This MUST be a list of strings.
-    4.  If you do not find a value for a field, OMIT the field entirely from your output. DO NOT use null.
-    """
+--- DATA TYPE & INFERENCE RULES (VERY IMPORTANT) ---
+1.  `has_dependents`: This field MUST be a native JSON boolean (`true` or `false`), NOT a string. If the user mentions a 'wife', 'spouse', 'son', 'daughter', or 'child', you MUST set `has_dependents` to `true`.
+2.  `marital_status`: This field MUST be a string (e.g., "married", "single"). If the user mentions a 'wife', 'spouse', or 'husband', you MUST set `marital_status` to "married". DO NOT use a boolean for this field.
+3.  `known_expenses`: This MUST be a list of strings. Extract the concepts, not just the numbers (e.g., "Laptop purchase", "Train ticket").
+4.  If you do not find a value for a field, OMIT the field entirely from your output. DO NOT use null.
+"""
     
     extraction_prompt = ChatPromptTemplate.from_messages([
         ("system", extraction_prompt_text),
@@ -61,25 +61,24 @@ async def run_profile_manager(state: GraphState):
     else:
         print("--- No new profile information found. ---")
         
-    # --- Part 2: Decide on the Next Action (NEW logic) ---
+    # --- Part 2: Decide on the Next Action ---
     print("--- Deciding next action after profile update ---")
-    routing_llm = ChatGroq(model="llama-3.1-8b-instant", temperature=0) # Use a fast model for this simple task
+    routing_llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0) # Or another capable model
     structured_routing_llm = routing_llm.with_structured_output(NextAction)
     
-    routing_prompt_text = """Based on the user's last message, decide if it contains a follow-up question that needs answering.
-- A 'question' explicitly asks for information, often starting with 'What', 'How', 'Why', or ending with a question mark.
-- An 'informational statement' simply provides data without asking for an explanation.
+    # --- UPDATED GERMAN-CONTEXT ROUTING PROMPT ---
+    routing_prompt_text = """You are an expert at analyzing user messages in a German tax context to determine if they contain a question that needs an answer.
 
 --- RULES ---
-1. If the message is a clear question, choose 'knowledge_agent'.
-2. If the message is ONLY an informational statement (like stating an expense or personal fact), choose 'end_conversation'.
+1.  Your primary job is to find a question. Look for question words like 'how', 'what', 'why', 'when', 'is this', or a question mark '?'.
+2.  If a direct question is present, you MUST choose 'knowledge_agent', even if the sentence also contains statements.
+3.  Only choose 'end_conversation' if the message is PURELY a statement of fact with no follow-up question.
 
 --- EXAMPLES ---
-- User Message: "As a freelancer, how does the home office deduction work?" -> Decision: 'knowledge_agent'
-- User Message: "What is the mileage rate?" -> Decision: 'knowledge_agent'
-- User Message: "Just so you know, I am married now." -> Decision: 'end_conversation'
-- User Message: "My flight to the conference cost 300 dollars." -> Decision: 'end_conversation'
-- User Message: "Car : 20,000 USD" -> Decision: 'end_conversation'
+- User Message: "As a Freiberufler, how does the Home-Office-Pauschale work?" -> Decision: 'knowledge_agent'
+- User Message: "I am married and want to know about the ELSTER portal." -> Decision: 'knowledge_agent'
+- User Message: "My train ticket to the client cost 80 euros." -> Decision: 'end_conversation'
+- User Message: "Just so you know, my occupation is a doctor." -> Decision: 'end_conversation'
 """
     
     routing_prompt = ChatPromptTemplate.from_messages([
@@ -94,7 +93,6 @@ async def run_profile_manager(state: GraphState):
     next_node = next_action_result.next_node
     print(f"--- Profile Manager decided next node is: {next_node} ---")
 
-    # If the profile was updated AND we are ending the conversation, add a confirmation message.
     confirmation_response = None
     if updates and next_node == "end_conversation":
         confirmation_response = f"Got it. I've updated your profile with: {', '.join(updates.keys())}."

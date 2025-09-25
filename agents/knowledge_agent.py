@@ -1,33 +1,48 @@
 # agents/knowledge_agent.py
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_groq import ChatGroq
 from langchain_core.messages import AIMessage
 
 def create_knowledge_agent(retriever):
     """
-    Creates the RAG chain for the knowledge agent.
+    Creates the RAG chain for the knowledge agent, contextualized for the German tax system.
     """
     
-    template = """You are a helpful tax assistant. Answer the user's question based only on the following context.
-    If the context doesn't contain the answer, state that you don't have enough information.
+    # --- UPDATED GERMAN-CONTEXT PROMPT ---
+    template = """You are a helpful tax assistant specializing in the German tax system. Your goal is to provide clear, accurate answers based ONLY on the provided context.
+Use German tax terminology where appropriate (e.g., Werbungskosten, Home-Office-Pauschale, Freiberufler) but explain it in English.
 
-        --- FORMATTING RULES ---
-    - You MUST use Markdown formatting.
-    - Keep paragraphs short and focused.
-    
-    Context:
-    {context}
-    
-    Question:
-    {question}
-    """
+--- CONTENT RULES ---
+- You MUST NOT add a top-level title or introduction that is not present in the context.
+- Start the answer directly by addressing the user's question.
+
+--- FORMATTING RULES ---
+- You MUST use Markdown formatting.
+- Use third-level headings (`###`) for main topics or sections.
+- Use bullet points (`*` or `-`) for lists of items.
+- Use bold text (`**text**`) to highlight key terms, numbers, and concepts (e.g., **6 € per day**, **1,260 €**).
+- Keep paragraphs short and focused.
+
+--- EXAMPLE OF CORRECT FORMATTING ---
+**Eligibility**
+* The space must be used exclusively and regularly for your trade or business.
+
+**Annual Limit**
+* The deduction is capped at a maximum of **210 home-office days** per year.
+---
+
+---
+Context:
+{context}
+
+Question:
+{question}
+"""
     
     prompt = PromptTemplate.from_template(template)
     
-    # CHANGE THE LLM INITIALIZATION
-    llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0)
+    llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0) # Or another capable model
     
     rag_chain = (
         {
@@ -49,16 +64,12 @@ async def run_knowledge_agent(state: dict, rag_chain):
     """
     print("--- Running Knowledge Agent ---")
     
-    # --- NEW CONTEXT-AWARE LOGIC ---
-    # Get the last 5 messages to provide context
     recent_messages = state["messages"][-5:]
     
-    # Format the messages into a single string
     contextual_question = "\n".join([f"{msg.type}: {msg.content}" for msg in recent_messages])
     
     print(f"--- Contextual Question for RAG: ---\n{contextual_question}\n---------------------------------")
     
-    # Invoke the RAG chain with the full context
     response = await rag_chain.ainvoke({"question": contextual_question})
     
     return {"direct_response": response}

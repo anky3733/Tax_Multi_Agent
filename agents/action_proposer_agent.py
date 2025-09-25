@@ -18,41 +18,29 @@ class ProposedAction(BaseModel):
 
 async def run_action_proposer(state: GraphState):
     """
-    Analyzes the user profile and suggests a next logical action.
+    Analyzes the user profile and suggests a next logical action in a German tax context.
     """
     print("--- Running Action Proposer ---")
     
-    # We can use a fast model for this classification task
-    llm = ChatGroq(model="llama-3.1-8b-instant", temperature=0)
+    llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0) # Or another capable model
     structured_llm = llm.with_structured_output(ProposedAction)
     
-    system_prompt = """You are a proactive tax assistant. Your goal is to help the user by suggesting a logical next step.
+    # --- UPDATED GERMAN-CONTEXT PROMPT ---
+    system_prompt = """You are a proactive tax assistant for the German tax system.
 Analyze the user's profile and decide if there is a relevant action to suggest.
 
 --- CRITICAL RULES ---
-1.  You MUST check the `known_expenses` list in the user profile.
-2.  If the user is a 'freelancer' AND the `known_expenses` list is COMPLETELY EMPTY, you MUST suggest the 'add_expense' action.
-3.  If the `known_expenses` list already contains one or more items, you MUST choose the 'none' action. DO NOT make a suggestion.
+1.  Check the `known_expenses` list in the user profile.
+2.  If the user's occupation is 'freelancer' (*Freiberufler*) AND the `known_expenses` list is COMPLETELY EMPTY, you MUST suggest the 'add_expense' action.
+3.  If the `known_expenses` list already contains items, you MUST choose the 'none' action.
 
 --- EXAMPLES ---
 - Profile: {{'occupation': 'freelancer', 'known_expenses': []}} -> Decision: 'add_expense'
-- Profile: {{'occupation': 'freelancer', 'known_expenses': ['home office']}} -> Decision: 'none'
-- Profile: {{'occupation': 'doctor', 'known_expenses': []}} -> Decision: 'none'
+- Profile: {{'occupation': 'freelancer', 'known_expenses': ['Home Office Lump Sum']}} -> Decision: 'none'
 """
     
     prompt = ChatPromptTemplate.from_messages([
         ("system", system_prompt),
-        ("human", "User Profile: {user_profile}"), 
-    ])
-    
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", system_prompt),
-        ("human", "User Profile: {user_profile}"), 
-    ])
-    
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", system_prompt),
-        # The user profile is the only context this agent needs
         ("human", "User Profile: {user_profile}"), 
     ])
     

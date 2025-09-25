@@ -2,15 +2,13 @@
 from typing import Literal
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Field
-from langchain_google_genai import ChatGoogleGenerativeAI
 from graph_state import GraphState
 from langchain_groq import ChatGroq
 
-# Define the structure of the routing decision
 class RouteQuery(BaseModel):
     """Routes the user's query to the appropriate tool or agent."""
-    next_node: Literal["knowledge_agent", "profile_manager", "end_conversation"] = Field(
-        description="The next node to route the query to. Use 'end_conversation' for simple greetings or non-tax related questions."
+    next_node: Literal["knowledge_agent", "profile_manager","end_conversation"] = Field(
+        description="The next node to route the query to..."
     )
 
 async def route_messages(state: GraphState):
@@ -19,12 +17,11 @@ async def route_messages(state: GraphState):
     """
     print("--- Routing Message ---")
     
-    llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0)
+    llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0) # Or another capable model
     structured_llm = llm.with_structured_output(RouteQuery)
     
-    # --- THIS IS THE PART TO REPLACE ---
-    # We are making the prompt much more specific with examples.
-    system_prompt = """You are an expert at routing a user's request to the correct agent.
+    # --- UPDATED GERMAN-CONTEXT EXAMPLES ---
+    system_prompt = """You are an expert at routing a user's request to the correct agent for a German tax context.
 Based on the user's last message, choose the appropriate next agent to call. Your primary goal is to first capture any new personal information.
 
 --- RULES ---
@@ -33,19 +30,18 @@ Based on the user's last message, choose the appropriate next agent to call. You
 3.  **PRIORITY 3: End Conversation:** If the message is a simple greeting, thank you, or off-topic, route to 'end_conversation'.
 
 --- EXAMPLES ---
-- User Input: "As a freelancer, I'm wondering how the home office deduction works."
+- User Input: "As a Freiberufler, I'm wondering how the Home-Office-Pauschale works."
 - Correct Route: "profile_manager"
 
-- User Input: "I am married and want to know about tax brackets."
+- User Input: "I am married and want to know about the ELSTER portal."
 - Correct Route: "profile_manager"
 
-- User Input: "What is the standard mileage rate for 2023?"
+- User Input: "What is the Kleinunternehmerregelung?"
 - Correct Route: "knowledge_agent"
 
 - User Input: "thanks that's all for now"
 - Correct Route: "end_conversation"
 """
-    # --- END OF REPLACEMENT ---
     
     prompt = ChatPromptTemplate.from_messages([
         ("system", system_prompt),

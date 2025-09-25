@@ -3,10 +3,11 @@ from langchain_core.messages import BaseMessage
 import operator
 
 class UserProfile(TypedDict):
-    """Represents the long-term memory of the user."""
-    occupation: str = None
-    marital_status: str = None
+    """Represents the long-term memory of the user for the German tax system."""
+    occupation: str = None         # e.g., "Freiberufler", "Angestellter"
+    marital_status: str = None     # e.g., "ledig", "verheiratet"
     has_dependents: bool = False
+    is_kleinunternehmer: bool = None # Is the user a "small business" for VAT?
     known_expenses: List[str] = []
 
 class GraphState(TypedDict):
