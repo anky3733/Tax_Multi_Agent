@@ -27,34 +27,7 @@ This prototype successfully demonstrates the core capabilities outlined in the c
 ## 🏛️ System Architecture
 
 The system is built using a stateful graph architecture orchestrated by **LangGraph**. This allows for complex, cyclical conversational flows where agents can hand off tasks to one another.
-
-  
-
-+---------------------------+ +-------------------------+
-| Streamlit UI |<----->| LangGraph Orchestrator |
-+---------------------------+ +----|--------------------+
-|
-+-------------------------------+-------------------------------+
-| | |
-+--------v--------+ +--------v---------+ +-------v---------+
-| Router Agent |------------>| Profile Manager |------------>| Knowledge Agent |
-| (Routes intent) | | (Updates Profile)| | (Answers Qs) |
-+-----------------+ +------------------+ +--------|--------+
-|
-+--------v----------+
-| Action Proposer |
-| (Suggests next) |
-+-------------------+
-|
-External Components |
-+-----------------------------+ <---------+
-| Knowledge Base (Vector DB) |
-+-----------------------------+
-+-----------------------------+
-| Long-Term Memory |
-| (User Profile) |
-+-----------------------------+
-code Code
+![Tax Agent](tax_agent.png)
 
     
 ### Component Roles
@@ -76,7 +49,7 @@ The system uses a dual-memory approach:
 
 1.  **Clone the repository:**
     ```bash
-    git clone <your_repo_url>
+    git clone https://github.com/anky3733/Tax_Multi_Agent.git
     cd taxfix-multi-agent
     ```
 2.  **Set up the environment:**
