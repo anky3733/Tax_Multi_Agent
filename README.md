@@ -42,8 +42,6 @@ The following is a complete, unedited conversation with the prototype, showcasin
   "known_expenses": []
 }
 
-  
-
 🤖 AI: Hello! How can I help you with your taxes today?
 
 🙂 Human: What is the Home-Office-Pauschale?
@@ -80,8 +78,6 @@ Filing Taxes as a Freiberufler (Self-Employed)
 
 👤 User Profile (Updated State):
 code JSON
-
-    
 {
   "occupation": "freelancer",
   "marital_status": null,
@@ -91,8 +87,6 @@ code JSON
     "Train ticket"
   ]
 }
-
-  
 
 🙂 Human: What about work equipment (arbeitsmittel)?
 
