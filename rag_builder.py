@@ -4,7 +4,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import DirectoryLoader, TextLoader
 from langchain_community.vectorstores import Chroma
 # --- CHANGE 1: Import the new embeddings class ---
-from langchain_community.embeddings import SentenceTransformerEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 
 @st.cache_resource
 def build_retriever():
@@ -29,7 +29,7 @@ def build_retriever():
     # This model runs on your machine. No API key needed.
     # The first time this runs, it will download the model (~227MB). This is a one-time event.
     print("--- Initializing local embedding model ---")
-    embeddings = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
+    embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
     print("--- Embedding model loaded ---")
     
     vectorstore = Chroma.from_documents(documents=splits, embedding=embeddings)
