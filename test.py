@@ -18,3 +18,6 @@ if api_key:
     st.success("Groq API key loaded successfully.")
 else:
     st.error("Google API key not found. Please check your .env file.")
+
+
+    openai/gpt-oss-120b

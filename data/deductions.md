@@ -1,24 +1,97 @@
+# deductions.md
+
 # Common Tax Deductions in Germany (Werbungskosten)
 
-## Home Office Lump Sum (Home-Office-Pauschale)
-- **Eligibility:** Available to anyone who works from home and does not have another dedicated workspace provided by their employer. This is common for freelancers.
-- **Calculation:** As of 2023, the deduction is a lump sum of **6 € per day** worked from home.
-- **Annual Limit:** The deduction is capped at a maximum of **210 home-office days** per year, resulting in a maximum annual deduction of **1,260 €**.
-- **Important:** This is a *Pauschale* (lump sum). You do not need to prove individual costs. You only need to track the days you worked from home.
+## Home Office Deduction (Home-Office-Pauschale)
+
+**Eligibility Requirements:**
+- Must work from home regularly
+- No dedicated workspace provided by employer
+- Particularly applicable for freelancers and remote workers
+- Must maintain records of home office days
+
+**Calculation Method:**
+- **Daily Rate:** €6 per day worked from home (as of 2023)
+- **Maximum Days:** 210 home office days per year
+- **Annual Cap:** €1,260 maximum deduction per year
+- **Documentation:** Only need to track working days from home (no expense receipts required)
+
+**Key Benefits:**
+- Lump sum deduction (Pauschale) - no individual cost proof needed
+- Simplified record-keeping compared to actual expense method
+- Available even if you have other workspaces occasionally
+
+---
 
 ## Vehicle Expenses (Fahrtkosten)
-- **Eligibility:** Applicable for self-employed individuals (*Freiberufler*) who use their vehicle for business-related travel (e.g., visiting clients).
-- **Methods:**
-  1. **Commuter Allowance (Pendlerpauschale):** Primarily for commuters to a primary workplace, but the concept of per-kilometer deduction is key.
-  2. **Actual Expense Method:** Track all car-related expenses (fuel, insurance, repairs, depreciation) and deduct the portion attributable to business use. A detailed logbook (*Fahrtenbuch*) is usually required.
+
+**Eligibility:**
+- Self-employed individuals (Freiberufler)
+- Business-related travel (client visits, meetings, business trips)
+- Excludes regular commuting to fixed workplace
+
+**Deduction Methods:**
+
+### 1. Distance-Based Deduction (Kilometerpauschale)
+- **Rate:** €0.30 per kilometer for business travel
+- **Documentation:** Travel log with dates, destinations, business purpose, kilometers
+- **Advantage:** Simple calculation, no receipt collection needed
+
+### 2. Actual Expense Method (Fahrtenbuch)
+- **Requirements:** Detailed logbook (Fahrtenbuch) mandatory
+- **Deductible Costs:** Fuel, insurance, repairs, maintenance, depreciation, parking fees
+- **Calculation:** Business use percentage × total vehicle expenses
+- **Documentation:** All vehicle-related receipts and detailed trip records
+
+**Important Notes:**
+- Choose method at beginning of tax year and maintain consistency
+- Business use must be clearly distinguishable from private use
+- Logbook must include: date, odometer readings, destination, business purpose
+
+---
 
 ## Work Equipment (Arbeitsmittel)
-- **Definition:** You can deduct the cost of equipment that is used almost exclusively (over 90%) for your professional work.
-- **Common Examples:**
-  - A new laptop or computer.
-  - Software subscriptions (e.g., Adobe Creative Cloud, Microsoft 365).
-  - A desk, office chair, or bookshelves.
-- **Depreciation (Abschreibung):** For items costing more than **800 €** (net), you typically have to depreciate the cost over several years. However, for computer hardware and software, a special rule allows for full depreciation in the first year.
+
+**Eligibility Criteria:**
+- Equipment used at least 90% for professional work
+- Necessary for performing job duties
+- Not provided by employer
+
+**Common Deductible Items:**
+- **Computer Hardware:** Laptops, desktops, monitors, printers
+- **Software:** Professional software licenses, subscriptions (Adobe Creative Cloud, Microsoft 365)
+- **Office Furniture:** Desk, ergonomic chair, filing cabinets, bookshelves
+- **Professional Tools:** Industry-specific equipment and tools
+- **Communication:** Professional mobile phone, internet costs (business portion)
+
+**Depreciation Rules (Abschreibung):**
+- **Under €800 (net):** Full deduction in purchase year
+- **Over €800 (net):** Depreciation over useful life (typically 3-13 years depending on item)
+- **Computer Equipment:** Special rule allows 100% depreciation in first year regardless of cost
+- **Mixed Use:** Only business percentage is deductible
+
+**Documentation Requirements:**
+- Purchase receipts and invoices
+- Proof of business necessity
+- Usage logs for mixed-use items
+
+---
 
 ## Health Insurance Premiums (Krankenversicherungsbeiträge)
-- **Deductibility:** Contributions to statutory or private basic health and long-term care insurance are fully deductible as "special expenses" (*Sonderausgaben*).
+
+**Deductibility:**
+- **Statutory Insurance:** Fully deductible as special expenses (Sonderausgaben)
+- **Private Insurance:** Basic coverage fully deductible, supplementary coverage partially deductible
+- **Long-term Care Insurance:** Fully deductible
+
+**Coverage Includes:**
+- Self-employed individual's premiums
+- Spouse's premiums (if not separately insured)
+- Dependent children's premiums
+
+**Limitations:**
+- Only basic health coverage counts toward full deduction
+- Supplementary/luxury coverage may have limits
+- Must be proportionate to income in some cases
+
+---
