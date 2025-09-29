@@ -6,7 +6,7 @@ This repository contains a prototype for a multi-agent system designed for perso
 
 ## 🚀 Live Demo
 
-![Demo GIF](tax_agent.gif)
+![Demo GIF](taxfix_agent.gif)
 
 *A screen recording of the final working application showing streaming responses, sidebar updates, and interactive action buttons.*
 
