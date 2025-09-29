@@ -84,8 +84,9 @@ class RouterAgent:
             'i have', 'i bought', 'i purchased', 'i spent',
             'my wife', 'my husband', 'my spouse', 'my children', 'my kids',
             'married', 'single', 'divorced', 'widowed',
-            'freelancer', 'employee', 'self-employed',
-            '€', 'euro', 'euros', 'per month', 'per year', 'annually', 'monthly'
+            'freelancer', 'freiberufler', 'employee', 'self-employed',  # Add 'freiberufler'
+            '€', 'euro', 'euros', 'per month', 'per year', 'annually', 'monthly',
+            'expecting to earn', 'planning to earn', 'will earn'  # Add these patterns
         ]
         
         has_profile_info = any(indicator in message_lower for indicator in profile_indicators)
@@ -97,7 +98,7 @@ class RouterAgent:
             'perfect', 'great', 'ok', 'okay', 'got it', 'understood'
         ]
         
-        is_ending = any(indicator in message_lower for indicator in ending_indicators) and len(last_message.split()) <= 4
+        is_ending = any(indicator in message_lower for indicator in ending_indicators) and len(last_message.split()) <= 10
         
         # Check for repeated information
         profile_completeness = self._assess_profile_completeness(user_profile)
@@ -149,7 +150,10 @@ ENHANCED ROUTING RULES (Priority Order):
    - Profile is incomplete and user is providing missing information
 
 3. **END_CONVERSATION** - Route here if:
-   - Simple acknowledgments ("OK", "Thanks", "Got it") with no questions
+   # --- START FIX 1.2: ADD MORE EXPLICIT EXAMPLES ---
+   - Simple acknowledgments ("OK", "Thanks", "Got it", "Perfect, thank you") with no questions
+   - The user message is very short (< 4 words) and contains a closing phrase.
+   # --- END FIX 1.2 ---
    - Clear conversation ending signals
    - Pure greetings without tax context
    - User indicates they're done or satisfied
@@ -174,6 +178,10 @@ EXAMPLES:
 "I'm actually married, not single" → profile_manager (correction)
 "Thanks, that helps!" → end_conversation (acknowledgment)
 "OK" → end_conversation (simple acknowledgment)
+# --- START FIX 1.2: ADD MORE EXPLICIT EXAMPLES ---
+"Great, thank you for the help!" → end_conversation (clear closing statement)
+"Perfect" → end_conversation (short acknowledgment)
+# --- END FIX 1.2 ---
 
 Always prioritize helping users get answers to their questions."""
 
@@ -206,6 +214,19 @@ Route this message to the appropriate agent.""")
             
             # Get context
             last_message = state["messages"][-1].content.strip()
+            message_lower = last_message.lower()
+            simple_closings = [
+                'thanks', 'thank you', 'ok', 'okay', 'got it', 'perfect', 
+                'great', 'sounds good', 'bye', 'goodbye', 'that helps'
+            ]
+            # If the message is short and is a known closing phrase, end immediately.
+            if message_lower in simple_closings and len(last_message.split()) <= 3:
+                logger.info("Simple closing detected - routing to end_conversation")
+                return {
+                    "next_node": "end_conversation",
+                    "routing_confidence": 1.0,
+                    "routing_reasoning": "Detected a simple closing phrase."
+                }
             user_profile = state.get("user_profile", {})
             
             # Get recent message history for context
@@ -228,68 +249,72 @@ Route this message to the appropriate agent.""")
             logger.info(f"Context analysis: {context_analysis}")
             
             # ENHANCED DECISION LOGIC
-            
-            # Priority 1: Questions always go to knowledge agent
+
+            if context_analysis['has_question'] and context_analysis['has_profile_info']:
+                logger.info("Message contains both profile info and a question.")
+                
+                # This is the condition you wanted to keep.
+                if not profile_completeness['is_well_established']:
+                    logger.info("Profile is incomplete. Routing to 'profile_manager' to build profile first.")
+                    return {
+                        "next_node": "profile_manager",
+                        "routing_confidence": 0.95,
+                        "routing_reasoning": "User is new; capturing profile info is the priority before answering."
+                    }
+                else:
+                    # --- THIS IS THE KEY FIX ---
+                    # The user is established, but we STILL must go to the profile manager
+                    # to capture the new information (e.g., the laptop purchase).
+                    logger.info("Profile is established, but new info detected. Routing to 'profile_manager' to capture update before answering.")
+                    return {
+                        "next_node": "profile_manager", # <-- CHANGED FROM 'knowledge_agent'
+                        "routing_confidence": 0.9,
+                        "routing_reasoning": "Capturing new profile information from an established user before routing to answer the question."
+                    }
+
+            # PRIORITY 2: Handle pure questions (no new profile info).
+            # This logic now only runs if the message is ONLY a question.
             if context_analysis['has_question']:
-                logger.info("Question detected - routing to knowledge_agent")
+                logger.info("Pure question detected. Routing directly to 'knowledge_agent'.")
                 return {
                     "next_node": "knowledge_agent",
                     "routing_confidence": 0.9,
-                    "routing_reasoning": "User asked a question - prioritizing answer over profile update"
+                    "routing_reasoning": "User asked a question without providing new profile data."
                 }
             
-            # Priority 2: Conversation ending
-            if context_analysis['is_ending'] and context_analysis['message_length'] <= 4:
-                logger.info("Conversation ending detected")
+            # PRIORITY 3: Handle pure profile updates (no question).
+            if context_analysis['has_profile_info']:
+                logger.info("Pure profile update detected. Routing to 'profile_manager'.")
+                return {
+                    "next_node": "profile_manager",
+                    "routing_confidence": 0.8,
+                    "routing_reasoning": "User is providing or updating profile information."
+                }
+            
+            # PRIORITY 4: Handle general conversation endings.
+            if context_analysis['is_ending']:
+                logger.info("General conversation ending detected. Routing to 'end_conversation'.")
                 return {
                     "next_node": "end_conversation",
                     "routing_confidence": 0.8,
-                    "routing_reasoning": "Short acknowledgment indicates conversation ending"
+                    "routing_reasoning": "Message indicates the user is finished."
                 }
-            
-            # Priority 3: New profile information
-            if context_analysis['has_profile_info']:
-                # But only if profile is not well-established or this is clearly new/corrected info
-                if not profile_completeness['is_well_established']:
-                    logger.info("New profile info for incomplete profile - routing to profile_manager")
-                    return {
-                        "next_node": "profile_manager",
-                        "routing_confidence": 0.8,
-                        "routing_reasoning": "User providing personal information to build profile"
-                    }
-                else:
-                    # Profile is established, might be updating or asking for advice
-                    logger.info("Profile info with established profile - checking for updates")
-                    return {
-                        "next_node": "profile_manager",
-                        "routing_confidence": 0.7,
-                        "routing_reasoning": "User updating existing profile information"
-                    }
-            
-            # Default: Route to knowledge agent for established profiles
-            if profile_completeness['is_well_established']:
-                logger.info("Well-established profile, routing to knowledge_agent for advice")
-                return {
-                    "next_node": "knowledge_agent",
-                    "routing_confidence": 0.6,
-                    "routing_reasoning": "Profile established, user likely needs tax guidance"
-                }
-            
-            # Fallback: Profile building for new users
-            logger.info("Incomplete profile, routing to profile_manager")
+
+            # FALLBACK for any other ambiguous input.
+            logger.info("Uncertain intent. Defaulting to 'profile_manager' for final analysis.")
             return {
                 "next_node": "profile_manager",
                 "routing_confidence": 0.5,
-                "routing_reasoning": "Profile incomplete, gathering user information"
+                "routing_reasoning": "Fallback for ambiguous input; letting profile manager check for latent info."
             }
             
         except Exception as e:
-            logger.error(f"Error in enhanced routing: {e}")
-            # Fallback to safe default
+            logger.error(f"Error in router agent: {e}", exc_info=True)
+            # Safe fallback
             return {
                 "next_node": "knowledge_agent",
                 "routing_confidence": 0.1,
-                "routing_reasoning": f"Error occurred, defaulting to knowledge agent: {str(e)}"
+                "routing_reasoning": f"An unexpected error occurred, defaulting to knowledge agent: {str(e)}"
             }
 
 

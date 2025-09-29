@@ -42,6 +42,7 @@ class UserProfile(TypedDict, total=False):
     # Basic Demographics
     user_id: Optional[str]
     first_name: Optional[str]
+    spouse_annual_income: Optional[float]
     occupation: Optional[str]  # e.g., "Freiberufler", "Angestellter", "Beamter"
     employment_type: Optional[str]  # "employed", "self_employed", "freelancer", "retired"
     

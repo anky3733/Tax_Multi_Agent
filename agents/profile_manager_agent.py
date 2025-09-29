@@ -52,6 +52,11 @@ class ProfileUpdates(BaseModel):
         None, 
         description="Marital status as string: 'single', 'married', 'divorced', 'widowed'"
     )
+    spouse_annual_income: Optional[float] = Field( # <-- ADD THIS
+        None,
+        description="Spouse's annual income in euros. Set to 0 if explicitly mentioned they don't work."
+    )
+
     has_dependents: Optional[bool] = Field(
         None, 
         description="Boolean: true if user has children or dependents, false otherwise"
@@ -175,12 +180,30 @@ def validate_profile_updates(updates: Dict[str, Any], current_profile: Dict[str,
         
         elif key in ["monthly_income", "annual_income"]:
             if isinstance(value, (int, float)) and value > 0:
-                validated_updates[key] = int(value)
-                # Auto-calculate the other income field
-                if key == "monthly_income" and "annual_income" not in updates:
-                    validated_updates["annual_income"] = int(value) * 12
-                elif key == "annual_income" and "monthly_income" not in updates:
-                    validated_updates["monthly_income"] = int(value) // 12
+                # --- START NEW LOGIC ---
+                annual_income = 0
+                if key == "monthly_income":
+                    validated_updates["monthly_income"] = int(value)
+                    annual_income = int(value) * 12
+                    if "annual_income" not in updates:
+                        validated_updates["annual_income"] = annual_income
+                elif key == "annual_income":
+                    validated_updates["annual_income"] = int(value)
+                    annual_income = int(value)
+                    if "monthly_income" not in updates:
+                        validated_updates["monthly_income"] = int(value) // 12
+
+                # Automatically set the income_range field
+                if annual_income > 0:
+                    if annual_income <= 30000:
+                        validated_updates["income_range"] = "0-30k"
+                    elif annual_income <= 60000:
+                        validated_updates["income_range"] = "30k-60k"
+                    elif annual_income <= 100000:
+                        validated_updates["income_range"] = "60k-100k"
+                    else:
+                        validated_updates["income_range"] = "100k+"
+
 
         elif key == "known_expenses":
             if not isinstance(value, list):
@@ -217,7 +240,17 @@ async def extract_profile_information(
         
         # Enhanced extraction prompt with better German context
         extraction_prompt_text = """You are an expert at extracting user profile information for tax purposes.
-Your job is to carefully analyze the conversation and extract relevant personal/professional information.
+Your goal is to find NEW or UPDATED information in the LATEST USER MESSAGE.
+
+--- EXTRACTION HIERARCHY ---
+1.  **EXPLICIT FACTS**: Prioritize information directly stated by the user.
+2.  **LOGICAL INFERENCES**: Make common-sense connections based on user phrasing. This is crucial.
+3.  **AVOID HALLUCINATION**: Do not invent information that isn't stated or strongly implied. It is better to have an empty field than an incorrect one.
+
+--- LOGICAL INFERENCE RULES (VERY IMPORTANT) ---
+-   If the user mentions "my wife", "my husband", or "my spouse", you MUST set `marital_status` to "married".
+-   If the user mentions "my wife doesn't work" or "my spouse has no income", you MUST set `spouse_annual_income` to 0.
+-   If the user mentions "my child", "my children", "my kids", "son", or "daughter", you MUST set `has_dependents` to true.
 
 --- CRITICAL UPDATE RULES ---
 1. **UPDATE EXISTING FIELDS**: If user provides NEW information that contradicts existing profile:
@@ -274,6 +307,13 @@ User: "My wife and I have two children"
 
 User: "As a doctor, I work from my home office"
 → occupation: "Freiberufler", confidence: 0.8 (doctors are usually freelance)
+
+
+User: "I'm married and my wife doesn't work. We have one child."
+→ marital_status: "married", spouse_annual_income: 0, has_dependents: true, confidence: 1.0
+
+User: "As a doctor, I work from my home office"
+→ occupation: "Freiberufler", confidence: 0.8 (doctors are usually freelance)
 """
         
         extraction_prompt = ChatPromptTemplate.from_messages([
@@ -322,29 +362,36 @@ async def determine_next_action(
         routing_prompt_text = """You are an expert at analyzing user messages in tax context to determine routing.
 
 --- ROUTING RULES ---
-1. **Priority: Detect Questions**
-   - Look for: question words (how, what, why, when, where, which)
+1. **Priority: Detect Questions (Even After Profile Updates)**
+   - Look for: question words (how, what, why, when, where, which, should, can, could)
    - Look for: question marks (?)
    - Look for: implicit questions ("I want to know about...", "Tell me about...")
    - Look for: help requests ("Can you help with...", "I need info on...")
+   - Look for: decision requests ("Should I...", "What's better...", "Which option...")
 
-2. **Question Types in Tax Context**:
+2. **IMPORTANT: Complex Messages**
+   - If message contains BOTH profile info AND a question → knowledge_agent
+   - Example: "I'm a freelancer earning 4500€. Should I register for VAT?" → knowledge_agent
+   - Example: "I'm married with two children. What deductions apply?" → knowledge_agent
+
+3. **Question Types in Tax Context**:
    - Direct questions: "How does home office deduction work?"
    - Implicit questions: "I want to know about Kleinunternehmer rules"
    - Help requests: "Can you explain ELSTER?"
    - Information seeking: "Tell me about tax deadlines"
 
-3. **Route to 'knowledge_agent' if**:
+4. **Route to 'knowledge_agent' if**:
    - Any question detected (direct or implicit)
    - Information seeking behavior
    - Requests for explanations or help
 
-4. **Route to 'end_conversation' if**:
+5. **Route to 'end_conversation' if**:
    - Pure statements with no questions
    - Simple confirmations ("Yes", "OK", "Thanks")
    - Profile updates only ("I am married", "My job is...")
 
 --- EXAMPLES ---
+"I'm a freelancer earning 4500€. Should I register for VAT?" → knowledge_agent (question after profile info)
 "As a Freiberufler, how does home office work?" → knowledge_agent (question detected)
 "I want to know about tax deadlines" → knowledge_agent (information seeking)
 "I am a doctor with two children" → end_conversation (pure statement)
@@ -423,13 +470,13 @@ def generate_confirmation_message(updates: Dict[str, Any]) -> Optional[str]:
 # --- MAIN AGENT ENTRY POINT ---
 async def run_profile_manager(state: GraphState) -> Dict[str, Any]:
     """
-    Main entry point for the Profile Manager Agent.
+    Main entry point for the Profile Manager Agent. (Updated Logic)
     
     This function:
-    1. Extracts profile information from the conversation
-    2. Updates the user profile with validated data
-    3. Determines the next routing action
-    4. Returns appropriate state updates
+    1. Extracts profile information from the conversation.
+    2. Updates the user profile with validated data.
+    3. Generates a confirmation message for any new data.
+    4. Ends the turn with the confirmation if no further question is asked.
     """
     logger = setup_logging()
     config = ProfileManagerConfig()
@@ -437,7 +484,6 @@ async def run_profile_manager(state: GraphState) -> Dict[str, Any]:
     logger.info("--- Running Profile Manager Agent ---")
     
     try:
-        # Validate input state
         if not state.get("messages"):
             logger.warning("No messages in state")
             return {"next_node": "end_conversation"}
@@ -447,65 +493,77 @@ async def run_profile_manager(state: GraphState) -> Dict[str, Any]:
         latest_message = messages[-1].content if messages else ""
         
         # Step 1: Extract profile information
+        # (Assuming you have also applied the recommended prompt fix here)
         logger.info("Extracting profile information...")
-        # extracted_data = await extract_profile_information(messages, config)
         extracted_data = await extract_profile_information(messages, config, current_profile)
         
-        # Step 2: Process and validate updates
+        # Step 2: Process, validate, and identify new updates
         raw_updates = extracted_data.dict(exclude_unset=True)
-        profile_updates = {k: v for k, v in raw_updates.items() 
-                          if k not in ['extraction_confidence', 'extracted_from']}
+        profile_updates = {k: v for k, v in raw_updates.items() if k not in ['extraction_confidence', 'extracted_from']}
         validated_updates = validate_profile_updates(profile_updates, current_profile)
         
-        # --- NEW LOGIC TO FIND ONLY NEW OR CHANGED INFO ---
         truly_new_updates = {}
         for key, value in validated_updates.items():
             if key == "known_expenses":
-                # Special handling for lists: find new items
                 current_expenses = set(current_profile.get("known_expenses", []))
                 new_expenses = [exp for exp in value if exp not in current_expenses]
                 if new_expenses:
-                    truly_new_updates[key] = new_expenses # Only confirm the new items
+                    truly_new_updates[key] = new_expenses
             elif current_profile.get(key) != value:
                 truly_new_updates[key] = value
 
-        # Apply all validated updates to profile
         updated_profile = current_profile.copy()
         updated_profile.update(validated_updates)
         
-        # Log the updates
-        if validated_updates:
-            logger.info(f"Profile updates: {validated_updates}")
-            logger.info(f"Confidence: {extracted_data.extraction_confidence}")
+        if truly_new_updates:
+            logger.info(f"New profile updates detected: {truly_new_updates}")
         else:
-            logger.info("No profile updates detected")
+            logger.info("No new profile updates detected")
         
-        # Step 3: Determine next routing action
+        # Step 3: Determine if the user also asked a question
         logger.info("Determining next action...")
         next_action = await determine_next_action(latest_message, config)
+
+        # Step 4: Generate confirmation message for new updates
+        confirmation = None
+        if truly_new_updates:
+            confirmation = generate_confirmation_message(truly_new_updates)
+
+        # Step 5: **REVISED LOGIC** - Decide what to return based on the context
         
-        # Step 4: Prepare return state
-        return_state = {
+        # SCENARIO A: A profile update happened, and there was NO question.
+        # End the conversation turn immediately with the confirmation message.
+        if confirmation and next_action.next_node == "end_conversation":
+            logger.info(f"Profile updated. Ending turn with confirmation: '{confirmation}'")
+            return {
+                "user_profile": updated_profile,
+                "next_node": "end_conversation",  # This stops the agent chain
+                "direct_response": confirmation
+            }
+        
+        # SCENARIO B: A profile update happened, AND a question was also asked.
+        # Update the profile and route to the knowledge agent to answer the question.
+        if next_action.next_node == "knowledge_agent":
+            logger.info("Profile updated, but a question was also detected. Routing to knowledge_agent.")
+            return {
+                "user_profile": updated_profile,
+                "next_node": "knowledge_agent",
+                # We can optionally pass the confirmation for the UI to display first
+                "direct_response": confirmation 
+            }
+            
+        # SCENARIO C: No updates were made and no question was asked.
+        # This will now only happen for simple inputs like "thanks" or "ok".
+        logger.info(f"No profile updates. Following router decision: {next_action.next_node}")
+        return {
             "user_profile": updated_profile,
             "next_node": next_action.next_node
         }
         
-        # Step 5: Add confirmation message only for new updates and if conversation is ending
-        if truly_new_updates and next_action.next_node == "end_conversation":
-            # Pass the *new* updates to the confirmation generator
-            confirmation = generate_confirmation_message(truly_new_updates)
-            if confirmation:
-                return_state["direct_response"] = confirmation
-        
-        logger.info(f"Profile Manager completed. Next node: {next_action.next_node}")
-        
-        return return_state
-        
     except Exception as e:
         logger.error(f"Profile Manager failed: {e}")
-        # Return safe fallback state
         return {
             "user_profile": state.get("user_profile", {}),
-            "next_node": "knowledge_agent",  # Safe fallback
+            "next_node": "knowledge_agent",
             "direct_response": "I encountered an issue updating your profile, but I can still help with your questions."
         }

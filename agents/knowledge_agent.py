@@ -80,7 +80,7 @@ RESPONSE GUIDELINES:
 1.  **Quick Answer**: Start with a single, bolded sentence that directly answers the user's question. Get straight to the point.
 2.  **Key Details**: After the Quick Answer, use a bulleted list to provide the most important details (4-6 points max).
 3.  **Example**: If applicable, provide a brief, personalized example.
-4.  **"Want More Info?"**: End by asking if the user wants more details, like the specific legal source or more complex edge cases.
+4.  **Closing**: Conclude naturally. You do not need to ask a follow-up question unless it is highly relevant.
 
 **Content Rules:**
 - Base answers ONLY on the provided context documents.
@@ -142,6 +142,12 @@ Provide a concise, scannable, and personalized answer following the structure ru
         # Personal status
         if user_profile.get("marital_status"):
             context_parts.append(f"Marital status: {user_profile['marital_status']}")
+            if user_profile.get("spouse_annual_income") is not None: # <-- ADD THIS BLOCK
+                spouse_income = user_profile['spouse_annual_income']
+                if spouse_income == 0:
+                    context_parts.append("Spouse's status: Not working (income €0)")
+                else:
+                    context_parts.append(f"Spouse's annual income: €{spouse_income:,.0f}")
         
         if user_profile.get("tax_class"):
             context_parts.append(f"Tax class: {user_profile['tax_class']}")

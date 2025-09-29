@@ -92,47 +92,68 @@ class ActionProposerAgent:
     def _analyze_profile_gaps(self, user_profile: Dict[str, Any]) -> List[str]:
         """
         Analyze the user profile for missing information or opportunities.
-        
+    
         Args:
             user_profile: Current user profile data
-            
+        
         Returns:
             List of identified gaps or opportunities
         """
         gaps = []
-        
+    
         # Check for missing basic information
         if not user_profile.get("occupation"):
             gaps.append("missing_occupation")
-        
+    
         if not user_profile.get("income_range"):
             gaps.append("missing_income")
-        
+    
         if user_profile.get("marital_status") == "married" and not user_profile.get("tax_class"):
             gaps.append("missing_tax_class")
-        
-            # ADD INCOME GAP DETECTION:
+    
+        # Income gap detection (avoid duplicate gaps)
         if not user_profile.get("monthly_income") and not user_profile.get("annual_income"):
-            gaps.append("missing_income")
+            if "missing_income" not in gaps:  # Avoid duplicate
+                gaps.append("missing_income")
+    
+        # Check for missing expenses based on occupation - WITH NULL SAFETY
+        occupation = user_profile.get("occupation")
+        if occupation and isinstance(occupation, str):  # NULL SAFETY CHECK
+            occupation_lower = occupation.lower()
+            known_expenses = user_profile.get("known_expenses", [])
         
-        # Check for missing expenses based on occupation
-        occupation = user_profile.get("occupation", "").lower()
-        known_expenses = user_profile.get("known_expenses", [])
+            if "freelancer" in occupation_lower or "freiberufler" in occupation_lower or "selbstständig" in occupation_lower:
+                if not known_expenses:
+                    gaps.append("missing_business_expenses")
         
-        if "freelancer" in occupation or "selbstständig" in occupation:
-            if not known_expenses:
-                gaps.append("missing_business_expenses")
-        
-        if "employee" in occupation or "angestellt" in occupation:
-            common_deductions = ["commuting", "home_office", "professional_development"]
-            if not any(expense.lower() for expense in known_expenses 
-                      if any(deduction in expense.lower() for deduction in common_deductions)):
-                gaps.append("missing_employee_deductions")
-        
+            if "employee" in occupation_lower or "angestellt" in occupation_lower:
+                common_deductions = ["commuting", "home_office", "professional_development"]
+                
+                # Safe expense checking with null protection
+                has_common_deduction = False
+                if known_expenses:
+                    try:
+                        for expense in known_expenses:
+                            if expense and isinstance(expense, str):  # NULL SAFETY
+                                expense_lower = expense.lower()
+                                if any(deduction in expense_lower for deduction in common_deductions):
+                                    has_common_deduction = True
+                                    break
+                    except Exception as e:
+                        logger.warning(f"Error checking expenses: {e}")
+                        # Continue without this check
+                
+                if not has_common_deduction:
+                    gaps.append("missing_employee_deductions")
+        else:
+            # If occupation is None or not a string, we definitely have a gap
+            if "missing_occupation" not in gaps:
+                gaps.append("missing_occupation")
+    
         # Check for family-related opportunities
         if user_profile.get("has_children") and not user_profile.get("child_benefits_claimed"):
             gaps.append("missing_child_benefits")
-        
+    
         return gaps
     
     def _build_prompt(self) -> ChatPromptTemplate:
@@ -214,73 +235,130 @@ Consider the user's current situation and suggest an action that would provide t
     async def propose_action(self, state: GraphState) -> Dict[str, Any]:
         """
         Analyze user profile and propose the most valuable next action.
-        
+    
         Args:
             state: Current graph state containing user profile
-            
+        
         Returns:
             Dictionary with proposed action or empty dict if no action needed
         """
         logger.info("--- Running Action Proposer ---")
-        
+    
         try:
-            # Validate state
+            # Validate state and user profile
             user_profile = state.get("user_profile", {})
+            messages = state.get("messages", [])
+            
             if not user_profile:
                 logger.warning("No user profile found in state")
                 return {}
             
+            # Safe message processing to avoid null errors
+            last_user_message = ""
+            if messages:
+                try:
+                    for message in reversed(messages):
+                        # Safe attribute access with null checks
+                        message_type = getattr(message, 'type', None)
+                        message_content = getattr(message, 'content', None)
+                        
+                        if (message_type == 'human' and 
+                            message_content and 
+                            isinstance(message_content, str) and 
+                            message_content.strip()):
+                            
+                            last_user_message = message_content.strip().lower()
+                            break
+                except Exception as msg_error:
+                    logger.warning(f"Error processing messages: {msg_error}")
+                    # Continue without last message context
+            
+            logger.info(f"Processing last message: {last_user_message[:100]}...")
+        
             # Analyze profile for gaps and opportunities
             profile_gaps = self._analyze_profile_gaps(user_profile)
             logger.info(f"Identified profile gaps: {profile_gaps}")
-
+            
+            # Handle action cooldown to avoid repetitive suggestions
             last_action_type = state.get("last_proposed_action_type")
             if last_action_type:
-                # If the last suggestion was to update income, don't suggest it again
+                logger.info(f"Last action type was: {last_action_type}")
+                
+                # Remove gaps that were already suggested
+                original_gaps = len(profile_gaps)
                 if last_action_type == "update_income":
                     profile_gaps = [g for g in profile_gaps if g != "missing_income"]
-                # If the last suggestion was about tax class, don't suggest it again
-                if last_action_type == "check_tax_class":
+                elif last_action_type == "check_tax_class":
                     profile_gaps = [g for g in profile_gaps if g != "missing_tax_class"]
-            
-            # If no significant gaps, don't propose unnecessary actions
+                elif last_action_type == "add_expense":
+                    profile_gaps = [g for g in profile_gaps if g != "missing_business_expenses"]
+                elif last_action_type == "add_income":
+                    profile_gaps = [g for g in profile_gaps if g != "missing_income"]
+                
+                filtered_gaps = len(profile_gaps)
+                if original_gaps != filtered_gaps:
+                    logger.info(f"Filtered out repeated suggestions: {original_gaps} → {filtered_gaps} gaps")
+        
+            # If no significant gaps remain, don't propose unnecessary actions
             if not profile_gaps:
-                logger.info("No significant gaps found, no action needed")
+                logger.info("No significant gaps found after filtering, no action needed")
                 return {}
-            
+        
             # Build and execute the proposal chain
-            prompt = self._build_prompt()
-            chain = prompt | self.llm
+            try:
+                prompt = self._build_prompt()
+                chain = prompt | self.llm
             
-            proposed_action = await chain.ainvoke({
-                "user_profile": user_profile,
-                "profile_gaps": profile_gaps
-            })
+                proposed_action = await chain.ainvoke({
+                    "user_profile": user_profile,
+                    "profile_gaps": profile_gaps
+                })
+                
+                # Validate the proposed action structure
+                if not proposed_action:
+                    logger.warning("LLM returned empty action")
+                    return {}
+                    
+                if not hasattr(proposed_action, 'action_type'):
+                    logger.warning("LLM response missing action_type")
+                    return {}
             
-            # Validate the proposed action
+            except Exception as llm_error:
+                logger.error(f"LLM execution failed: {llm_error}")
+                return {}
+        
+            # Validate the proposed action content
             if proposed_action.action_type == "none":
                 logger.info("LLM determined no action is needed")
                 return {}
-            
+        
             logger.info(f"Proposed action: {proposed_action.action_type} (priority: {proposed_action.priority})")
             if proposed_action.rationale:
                 logger.info(f"Rationale: {proposed_action.rationale}")
-            
-            # Return structured action data
+        
+            # Build structured action data with safe attribute access
             action_data = {
-                "action_type": proposed_action.action_type,
-                "rationale": proposed_action.rationale,
-                "priority": proposed_action.priority,
-                "estimated_benefit": proposed_action.estimated_benefit,
-                "action_data": proposed_action.action_data,
-                "timestamp": state.get("timestamp", ""),  # For tracking when action was proposed
+                "action_type": getattr(proposed_action, 'action_type', 'add_expense'),
+                "rationale": getattr(proposed_action, 'rationale', 'No rationale provided'),
+                "priority": getattr(proposed_action, 'priority', 'medium'),
+                "estimated_benefit": getattr(proposed_action, 'estimated_benefit', None),
+                "action_data": getattr(proposed_action, 'action_data', {}),
+                "timestamp": state.get("timestamp", ""),
             }
             
+            # Final validation of action_data
+            if not action_data.get("action_type") or not action_data.get("rationale"):
+                logger.warning("Invalid action data structure, skipping action proposal")
+                return {}
+        
             return {"proposed_action": action_data}
-            
+        
         except Exception as e:
             logger.error(f"Error in action proposer: {e}")
-            # Fail gracefully - don't break the conversation flow
+            import traceback
+            logger.error(f"Full traceback: {traceback.format_exc()}")
+            
+            # Return empty dict to fail gracefully without breaking conversation flow
             return {}
     
     def _get_expense_categories_for_occupation(self, occupation: str) -> List[str]:

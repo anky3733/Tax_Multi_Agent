@@ -168,52 +168,95 @@ class StreamingGraphRunner:
 def build_graph():
     """
     Builds and compiles the LangGraph StateGraph that defines the agent workflow.
-    This function is cached to prevent rebuilding on every interaction.
+    This function is cached to prevent rebuilding on every Streamlit interaction.
     """
-    print("--- Building graph... ---")
-    
-    # 1. Initialize Tools and Chains that agents will use
+    print("--- Building graph and dependencies... (This should only run once) ---")
+
+    # 1. Build dependencies that the agents will need.
     retriever = build_retriever()
-    rag_chain = create_knowledge_agent(retriever)
-    
-    # Use functools.partial to "freeze" the rag_chain argument for the knowledge agent node.
-    knowledge_agent_node = partial(run_knowledge_agent, rag_chain=rag_chain)
-    
-    # 2. Define the graph structure using LangGraph's StateGraph
+    if not retriever:
+        st.error("Fatal Error: Could not build the RAG retriever. Check the './data' directory and logs.")
+        return None
+
+    create_knowledge_agent(retriever)
+
+    # 2. Define the conditional routing logic functions.
+    #    We now have TWO separate functions for clarity and correctness.
+
+    def route_after_profile_manager(state: GraphState) -> str:
+        """
+        Decision function specifically for the profile_manager node.
+        It handles the unique case where it might need to pass control to the knowledge_agent.
+        """
+        next_node = state.get("next_node")
+        if next_node == "knowledge_agent":
+            return "knowledge_agent"
+        if next_node == "end_conversation":
+            return "end"
+        return "propose_action"
+
+    def route_after_knowledge_agent(state: GraphState) -> str:
+        """
+        Decision function for the knowledge_agent node.
+        It's simpler: after answering, it either ends or we propose an action.
+        It NEVER routes back to itself.
+        """
+        next_node = state.get("next_node")
+        if next_node == "end_conversation":
+            return "end"
+        return "propose_action"
+
+    # 3. Define the graph structure using LangGraph's StateGraph.
     workflow = StateGraph(GraphState)
     
-    # 3. Add the agents as nodes in the graph
+    # 4. Add the agents as nodes.
     workflow.add_node("router", run_router)
     workflow.add_node("profile_manager", run_profile_manager)
-    workflow.add_node("knowledge_agent", knowledge_agent_node)
+    workflow.add_node("knowledge_agent", run_knowledge_agent)
     workflow.add_node("action_proposer", run_action_proposer)
     
-    # 4. Define the edges
+    # 5. Define the edges to connect the nodes.
     workflow.set_entry_point("router")
     
+    # The router is the initial decision-maker.
     workflow.add_conditional_edges(
         "router",
-        lambda state: state["next_node"],
+        lambda state: state.get("next_node"),
         {
-            "knowledge_agent": "knowledge_agent",
             "profile_manager": "profile_manager",
+            "knowledge_agent": "knowledge_agent",
             "end_conversation": END,
         },
     )
     
+    # After the Profile Manager, use its specific routing function.
     workflow.add_conditional_edges(
         "profile_manager",
-        lambda state: state["next_node"],
+        route_after_profile_manager,
         {
-            "knowledge_agent": "knowledge_agent",
-            "end_conversation": "action_proposer",
-        },
+            "knowledge_agent": "knowledge_agent", # <-- This path is now valid
+            "end": END,
+            "propose_action": "action_proposer",
+        }
     )
     
-    workflow.add_edge("knowledge_agent", "action_proposer")
+    # After the Knowledge Agent, use its simpler routing function.
+    workflow.add_conditional_edges(
+        "knowledge_agent",
+        route_after_knowledge_agent,
+        {
+            "end": END,
+            "propose_action": "action_proposer",
+            # Notice there is no "knowledge_agent" key here, which is correct.
+        }
+    )
+    
+    # After the Action Proposer runs, the turn is always over.
     workflow.add_edge("action_proposer", END)
     
-    print("--- Graph built successfully! ---")
+    print("--- Graph built and compiled successfully! ---")
+    
+    # 6. Compile the graph into a runnable object.
     return workflow.compile()
 
 # Build the graph and streaming runner
@@ -387,7 +430,7 @@ if st.session_state.proposed_action:
 if prompt := st.chat_input("Ask about deductions, update your profile, or get personalized tax advice..."):
     st.session_state.messages.append(HumanMessage(content=prompt))
     st.session_state.proposed_action = None
-    st.session_state.last_proposed_action_type = None
+    # st.session_state.last_proposed_action_type = None
     st.session_state.run_graph_on_load = True
     st.rerun()
 
