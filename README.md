@@ -311,9 +311,6 @@ Develop a suite of unit and integration tests to validate agent behavior and pre
 
 ---
 
-## 📝 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## 🙏 Acknowledgments
 
