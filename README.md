@@ -243,7 +243,11 @@ Interactive buttons in the chat interface directly implement the concept of acti
 
 ```bash
 git clone https://github.com/anky3733/Tax_Multi_Agent.git
+<<<<<<< HEAD
 cd Tax_Multi_Agent
+=======
+cd <your-repo-directory>
+>>>>>>> 60d5af0d6812b36d3778f7959a8fa744c7b66faf
 ```
 
 ### 2. Set Up a Conda Environment
