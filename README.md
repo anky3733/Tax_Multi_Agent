@@ -209,7 +209,7 @@ The system uses a dual-memory approach to meet the case study's requirements:
 ### Assumptions
 
 - **Tax Knowledge:** The system's tax knowledge is strictly limited to the content of the markdown files in the `/data` directory. It is instructed to state when it cannot answer a question from the provided context.
-- **Models:** The system is optimized for fast, high-quality models available via the Groq API (e.g., Llama3-70b, Llama3-8b), but can be adapted to other providers.
+- **Models:** The system is optimized for fast, high-quality models available via the Groq API (e.g., openai/gpt-oss-120b), but can be adapted to other providers.
 - **Data Persistence:** The user profile is stored in-memory for the duration of the browser session. A production system would use a database.
 
 ---
@@ -243,11 +243,7 @@ Interactive buttons in the chat interface directly implement the concept of acti
 
 ```bash
 git clone https://github.com/anky3733/Tax_Multi_Agent.git
-<<<<<<< HEAD
 cd Tax_Multi_Agent
-=======
-cd <your-repo-directory>
->>>>>>> 60d5af0d6812b36d3778f7959a8fa744c7b66faf
 ```
 
 ### 2. Set Up a Conda Environment
