@@ -242,8 +242,8 @@ Interactive buttons in the chat interface directly implement the concept of acti
 ### 1. Clone the Repository
 
 ```bash
-git clone <your-repo-url>
-cd <your-repo-directory>
+git clone https://github.com/anky3733/Tax_Multi_Agent.git
+cd Tax_Multi_Agent
 ```
 
 ### 2. Set Up a Conda Environment
@@ -266,6 +266,7 @@ Create a file named `.env` in the project's root directory and add your Groq API
 ```
 GROQ_API_KEY="gsk_YourSecretKeyHere"
 ```
+Tutorial to create groq_api_key: https://www.youtube.com/watch?v=TTG7Uo8lS1M
 
 ### 5. Run the Streamlit App
 
