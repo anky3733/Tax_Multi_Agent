@@ -242,7 +242,7 @@ Interactive buttons in the chat interface directly implement the concept of acti
 ### 1. Clone the Repository
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/anky3733/Tax_Multi_Agent.git
 cd <your-repo-directory>
 ```
 
